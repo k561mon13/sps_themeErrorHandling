@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tool type="plugin">
+    <displayname>Theme Error Handling</displayname>
+    <description>Theme Error Handling</description>
+    <src><![CDATA[
+        themeErrorHandling.init ();
+    ]]></src>
+    <jssrc><![CDATA[
+        var themeErrorHandling = {
+			maxDialogs: 5,
+			dialogs:0,
+            init: function () {
+				message = '',
+				spm.events.addListener('THEME_LOAD_STATE_CHANGED', function(event,theme) {
+					button_id = 'themeErrorHandling_button_' + theme.name;
+					button = document.getElementById(button_id);
+					if (button){
+						button.style = (theme._loadState=='LOAD_ENDED' ? "background-color:green" : (theme._loadState=='LOAD_ENDED' ? "background-color:red" : "background-color:gray"))
+					}
+					else if(theme._loadState=='LOAD_ERROR' && themeErrorHandling.maxDialogs>themeErrorHandling.dialogs){
+						themeErrorHandling.dialogs+=1,
+						primaryendpointtype = theme._initialConfig.primaryendpointtype || theme._initialConfig.clientlayers[0].datasources[0].type;
+						if(['wms','wfs'].includes(primaryendpointtype)){
+							this.message = 'Du har forsøgt at tænde for temaet ' + theme._displayname + ', der tilsyneladende ikke fungerer.<br>' +
+											'Det er en ekstern tjeneste, der leverer data til dette, så det er umiddelbart uden for vores kontrol.<br>' +
+											'Normalt vil problemet løse sig selv i løbet af dagen.<br>' +
+											'Tjek evt. EKNET for at se om det er en kendt fejl.<br>' +
+											'Hvis det fortsætter må du gerne kontakte GIS-kontoret, så vi kan finde en løsning.<br>' +
+											'Hvis det er et baggrundskort eller et luftfoto vil du muligvis kunne finde et alternativ, der fungerer, da vi har adgang til kort fra flere leverandører.<br><br>' +
+											'Det kan muligvis hjælpe at slukke temaet og tænde det igen (ellers sluk det):'
+						}
+						else if(primaryendpointtype=='arcgisrest'){
+							this.message = 'Du har forsøgt at tænde for temaet ' + theme._displayname + ', der tilsyneladende ikke fungerer.<br>' +
+											'Det er en ekstern tjeneste, der leverer data til dette, så det er umiddelbart uden for vores kontrol.<br>' +
+											'Tjek evt. EKNET for at se om det er en kendt fejl.<br>' +
+											'Hvis problemet fortsætter må du gerne kontakte GIS-kontoret, så vi kan løse problemet.<br><br>' +
+											'Det kan muligvis hjælpe at slukke temaet og tænde det igen (ellers sluk det):'
+						}
+						else{
+							this.message = 'Du har forsøgt at tænde for temaet ' + theme._displayname + ', der tilsyneladende ikke fungerer.<br>' +
+											'Tjek evt. EKNET for at se om det er en kendt fejl.<br>' +
+											'Hvis problemet fortsætter må du gerne kontakte GIS-kontoret, så vi kan løse problemet.<br><br>' +
+											'Det kan muligvis hjælpe at slukke temaet og tænde det igen (ellers sluk det):'
+						}
+						
+						this.message += '<br><button id = "themeErrorHandling_button_' + theme.name + '" type="button" id="themeErrorHandlingOnOff" name="themeErrorHandlingOnOff" onclick="spm.getThemeContainer().getTheme(' + "'" + theme.name + "'" + ').toggle();if(this.innerHTML=='+"'SLUK TEMAET'"+'){this.innerHTML='+"'TÆND TEMAET'"+';this.style='+"'background-color:gray'"+'}else{this.innerHTML='+"'SLUK TEMAET'"+';if(spm.getThemeContainer().getTheme(' + "'" + theme.name + "'" + ')._loadState=='+"'LOAD_ERROR'"+'){this.style='+"'background-color:red'"+'}else{this.style='+"'background-color:green'"+'}}" style="background-color:red">SLUK TEMAET</button>'
+						
+						dialog = new spatialmap.gui.Dialog({
+							title: 'FEJL: ' + theme._displayname,
+							id: 'themeLoadError_dialog_'+theme.name,
+							width: 'auto',
+							dockable: false,
+							closeHandler: function () {
+								delete this;
+								themeErrorHandling.dialogs-=1;
+							}
+							});
+						dialog.addContentHTML(this.message);
+						dialog.show();
+							
+						}
+				});
+			}
+        };
+     ]]></jssrc>
+</tool>
+
+ 
